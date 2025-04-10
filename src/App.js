@@ -6,7 +6,7 @@ import Dashboard from './Components/Dashboard.js'; // Make sure this file exists
 import Home from './Components/Home.js'; // Make sure this file exists
 import Contact from './Components/Contact.js'; // Make sure this file exists
 import About from './Components/About.js'; // Make sure this file exists
-
+import ProfilePage from './Components/ProfilePage.js';
 function App() {
   return (
     <BrowserRouter>
@@ -18,6 +18,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/about" element={<About />} />
+          <Route path="/profile" element={<ProfilePage />} />
           <Route path="/student-dashboard" element={<Dashboard />} />
         </Routes>
       </div>

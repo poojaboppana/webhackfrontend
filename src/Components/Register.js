@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Register.css';
 
 const Register = ({ onClose }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate(); // Get the navigate function
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,6 +35,7 @@ const Register = ({ onClose }) => {
         alert('✅ Registration successful');
         form.reset();
         if (onClose) onClose();
+        navigate('/login'); // Redirect to login page after successful registration
       } else {
         alert('❌ ' + result.message);
       }

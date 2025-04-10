@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Login.css';
-import './Navbar.css'; // Make sure you have Navbar.css in the same directory
+import './Navbar.css';
 import { Link } from 'react-router-dom';
+
 const Login = () => {
   const [regNumber, setRegNumber] = useState('');
   const [password, setPassword] = useState('');
@@ -32,7 +33,11 @@ const Login = () => {
         throw new Error(data.message || 'Login failed');
       }
 
-      // Store user data in localStorage
+      // Store regNumber separately in localStorage
+      localStorage.setItem('regNumber', regNumber);
+      // Store role separately
+      localStorage.setItem('role', role);
+      // Store full user data
       localStorage.setItem('user', JSON.stringify({
         regNumber,
         role,
@@ -56,16 +61,16 @@ const Login = () => {
 
   return (
     <div className="login-container">
-         <nav className="navbar">
-      <div className="logo">CodeTracker</div>
-      <ul className="nav-links">
-        <li><Link to="/">Home</Link></li>
-        <li><Link to="/login">Login</Link></li>
-        <li><Link to="/register">Register</Link></li>
-        <li><Link to="/about">About</Link></li>
-        <li><Link to="/contact">Contact</Link></li>
-      </ul>
-    </nav>
+      <nav className="navbar">
+        <div className="logo">CodeTracker</div>
+        <ul className="nav-links">
+          <li><Link to="/">Home</Link></li>
+          <li><Link to="/login">Login</Link></li>
+          <li><Link to="/register">Register</Link></li>
+          <li><Link to="/about">About</Link></li>
+          <li><Link to="/contact">Contact</Link></li>
+        </ul>
+      </nav>
       <div className="container">
         <div className="left-panel">
           <div className="content-wrapper">
@@ -87,7 +92,7 @@ const Login = () => {
 
             <input
               type="text"
-              placeholder="Enter your username"
+              placeholder="Enter your registration number"
               value={regNumber}
               onChange={(e) => setRegNumber(e.target.value)}
               required

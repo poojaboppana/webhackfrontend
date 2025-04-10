@@ -20,7 +20,7 @@ const Home = () => {
       <section className="hero glass-effect">
         <div className="hero-left animate-left">
           <h1 className="glow-text">Student Coding Profile Tracker</h1>
-          <div className="popular-searches">
+          <div className="popular-searches"> 
             <span>Popular:</span>
             <span className="tag">Leetcode</span>
             <span className="tag">Codechef</span>
