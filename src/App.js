@@ -4,6 +4,8 @@ import Login from './Components/Login.js'; // Make sure this file exists
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Dashboard from './Components/Dashboard.js'; // Make sure this file exists
 import Home from './Components/Home.js'; // Make sure this file exists
+import Contact from './Components/Contact.js'; // Make sure this file exists
+import About from './Components/About.js'; // Make sure this file exists
 
 function App() {
   return (
@@ -14,6 +16,8 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<Home />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/about" element={<About />} />
           <Route path="/student-dashboard" element={<Dashboard />} />
         </Routes>
       </div>
