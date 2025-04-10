@@ -19,7 +19,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 80vh;
+  min-height: 100vh;
   padding: 20px;
   animation: gradientShift 15s ease infinite;
   background-size: 200% 200%;
