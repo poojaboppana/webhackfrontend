@@ -10,11 +10,7 @@
   --success-color: #2ecc71;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+
 
 .login-container {
   margin: 0;
@@ -23,7 +19,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
+  min-height: 80vh;
   padding: 20px;
   animation: gradientShift 15s ease infinite;
   background-size: 200% 200%;
@@ -38,7 +34,8 @@
 /* Centered card container */
 .container {
   width: 900px;
-  height: 550px;
+  margin-top: 60px;
+  height: 500px;
   display: flex;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
   border-radius: 20px;

@@ -44,7 +44,7 @@ const Register = () => {
 
   return (
     <div className='register-container'>
-    <div className="container">
+    <div className="re-container">
       <div className="left-panel">
         <div className="content-wrapper">
           <h2>Welcome to</h2>

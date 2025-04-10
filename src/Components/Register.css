@@ -25,7 +25,7 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  padding: 20px;
+  padding: 10px;
   animation: gradientShift 15s ease infinite;
   background-size: 200% 200%;
 }
@@ -37,7 +37,7 @@
 }
 
 /* Centered card container */
-.container {
+.re-container {
   width: 900px;
   height: 550px;
   display: flex;
@@ -49,7 +49,7 @@
   animation: fadeIn 0.8s ease-out;
 }
 
-.container:hover {
+.re-container:hover {
   transform: translateY(-5px);
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
 }
@@ -96,14 +96,14 @@
   max-width: 300px;
 }
 
-.left-panel h2 {
+.re-container.left-panel h2 {
   font-size: 24px;
   margin-bottom: 10px;
   font-weight: 400;
   opacity: 0.9;
 }
 
-.left-panel h1 {
+.re-container.left-panel h1 {
   font-size: 32px;
   margin-bottom: 20px;
   font-weight: 600;
@@ -119,21 +119,21 @@
   100% { background-position: 100% 50%; }
 }
 
-.left-panel p {
+.re-container.left-panel p {
   font-size: 14px;
   line-height: 1.6;
   margin-bottom: 30px;
   opacity: 0.8;
 }
 
-.animated-icons {
+.re-container.animated-icons {
   display: flex;
   justify-content: center;
   gap: 15px;
   margin-top: 30px;
 }
 
-.icon {
+.re-container.icon {
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -145,7 +145,7 @@
   transition: transform 0.3s ease;
 }
 
-.icon::before {
+.re-container.icon::before {
   content: '';
   position: absolute;
   width: 100%;
@@ -155,7 +155,7 @@
   animation: ripple 2s infinite ease-out;
   opacity: 0;
 }
-.signinn{
+.re-container.signinn{
     font-size: small;
     list-style: none;
     text-decoration: none;
@@ -170,7 +170,7 @@
   100% { transform: scale(1.5); opacity: 0; }
 }
 
-.icon:hover {
+.re-container.icon:hover {
   transform: translateY(-5px) scale(1.1);
 }
 
@@ -179,7 +179,7 @@
 .hackerrank { background-image: url('https://www.ideaconnection.com/images/software/hackerearth-295.png'); background-size: cover; }
 
 /* Wave-like edge */
-.left-panel::after {
+.re-container.left-panel::after {
   content: '';
   position: absolute;
   right: -30px;
@@ -191,7 +191,7 @@
 }
 
 /* Right panel with form */
-.right-panel {
+.re-container.right-panel {
   flex: 1;
   padding: 40px 50px;
   display: flex;
@@ -200,7 +200,7 @@
   background-color: white;
 }
 
-.right-panel h2 {
+.re-container.right-panel h2 {
   font-size: 26px;
   color: var(--dark-gray);
   margin-bottom: 24px;
@@ -208,7 +208,7 @@
   position: relative;
 }
 
-.right-panel h2::after {
+.re-container.right-panel h2::after {
   content: '';
   position: absolute;
   bottom: -8px;
@@ -219,12 +219,12 @@
   border-radius: 3px;
 }
 
-.form {
+.re-container.form {
   display: flex;
   flex-direction: column;
 }
 
-.form input {
+.re-container.form input {
   width: 100%;
   padding: 14px 10px;
   margin: 8px 0;
@@ -235,7 +235,7 @@
   transition: all 0.3s ease;
 }
 
-.form input:focus {
+.re-container.form input:focus {
   outline: none;
   border-color: var(--secondary-color);
   box-shadow: 0 0 0 3px rgba(2, 101, 255, 0.1);
@@ -248,23 +248,23 @@
 }
 
 /* Input rows for two inputs side-by-side */
-.input-row {
+.re-container.input-row {
   display: flex;
   gap: 15px;
 }
 
-.input-row input {
+.re-container.input-row input {
   flex: 1;
 }
 
 /* Button styles */
-.actions {
+.re-container.actions {
   display: flex;
   gap: 15px;
   margin-top: 25px;
 }
 
-.signup {
+.re-container.signup {
   flex: 1;
   background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
   color: white;
@@ -279,7 +279,7 @@
   overflow: hidden;
 }
 
-.signup::before {
+.re-container.signup::before {
   content: '';
   position: absolute;
   top: 0;
@@ -290,11 +290,11 @@
   transition: all 0.5s ease;
 }
 
-.signup:hover {
+.re-container.signup:hover {
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(45, 51, 107, 0.3);
 }
-.signin:hover{
+.re-container.signin:hover{
  
         flex: 1;
         background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
@@ -310,16 +310,16 @@
         overflow: hidden;
       
 }
-.signup:hover::before {
+.re-container.signup:hover::before {
   left: 100%;
 }
 
-.signup.submitting {
+.re-container.signup.submitting {
   pointer-events: none;
   opacity: 0.8;
 }
 
-.signup.submitting::after {
+.re-container.signup.submitting::after {
   content: '';
   position: absolute;
   top: 50%;
@@ -337,7 +337,7 @@
   to { transform: rotate(360deg); }
 }
 
-.signin {
+.re-container.signin {
   flex: 1;
   background: linear-gradient(to right, blue,rgb(8, 8, 114));
   color:white;
@@ -350,7 +350,7 @@
   transition: all 0.3s ease;
 }
 
-.signin:hover {
+.re-container.signin:hover {
   background-color: #f5f7fa;
   border-color: #d1d8e0;
   transform: translateY(-2px);
