@@ -17,8 +17,8 @@
   padding: 0;
 }
 
-body {
-  margin: 0;
+.register-container {
+
   font-family: 'Poppins', sans-serif;
   background: linear-gradient(135deg, #e0f2e9 0%, #f8f9fa 100%);
   display: flex;

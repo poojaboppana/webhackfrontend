@@ -43,6 +43,7 @@ const Register = () => {
   };
 
   return (
+    <div className='register-container'>
     <div className="container">
       <div className="left-panel">
         <div className="content-wrapper">
@@ -91,6 +92,7 @@ const Register = () => {
          
         </form>
       </div>
+    </div>
     </div>
   );
 };
