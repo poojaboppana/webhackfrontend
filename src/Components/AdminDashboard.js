@@ -1,346 +1,382 @@
-import React, { useState, useEffect, useRef } from 'react';
-import './Dashboard.css';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import * as XLSX from 'xlsx';
+import { FaUsers, FaTrophy, FaFileExcel } from 'react-icons/fa';
+import './AdminDashboard.css';
 
-const Dashboard = () => {
-  const [codechefData, setCodechefData] = useState(null);
-  const [leetcodeData, setLeetcodeData] = useState(null);
+const AdminDashboard = () => {
+  const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('codechef');
-  const [contestList, setContestList] = useState([]);
-  const [profilePhoto, setProfilePhoto] = useState('https://via.placeholder.com/150');
-  const [isEditingPhoto, setIsEditingPhoto] = useState(false);
-  const fileInputRef = useRef(null);
-  const [ratingHistory, setRatingHistory] = useState([]);
-  const [userDetails, setUserDetails] = useState(null);
+  const [error, setError] = useState('');
+  const [contestDetails, setContestDetails] = useState({
+    platform: 'codechef',
+    contestName: '',
+    department: 'all',
+  });
+  const [contestParticipants, setContestParticipants] = useState([]);
+  const [nonParticipants, setNonParticipants] = useState([]);
+  const [contestLoading, setContestLoading] = useState(false);
+  const [stats, setStats] = useState({});
+  const [activeTab, setActiveTab] = useState('students');
+  const [selectedDepartment, setSelectedDepartment] = useState('all');
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (!user) {
-      window.location.href = '/login';
-      return;
-    }
-    setUserDetails(user);
-
-    const fetchData = async () => {
-      try {
-        // Fetch platform usernames from backend
-        const userResponse = await fetch(`http://localhost:5000/api/user/${user.regNumber}`);
-        const userData = await userResponse.json();
-
-        // Fetch CodeChef data
-        if (userData.codechef) {
-          const codechefResponse = await fetch(`https://codechef-api.vercel.app/${userData.codechef}`);
-          const codechefData = await codechefResponse.json();
-          setCodechefData(codechefData);
-
-          if (codechefData.contestHistory) {
-            setContestList(
-              codechefData.contestHistory.map((contest) => ({
-                name: contest.name,
-                rank: contest.rank,
-              }))
-            );
-          }
-          if (codechefData.ratingData) {
-            setRatingHistory(codechefData.ratingData);
-          }
-        }
-
-        // Fetch LeetCode data
-        if (userData.leetcode) {
-          const leetcodeResponse = await fetch(`https://leetcode-stats-api.herokuapp.com/${userData.leetcode}`);
-          const leetcodeData = await leetcodeResponse.json();
-          setLeetcodeData(leetcodeData);
-        }
-
-        setLoading(false);
-      } catch (err) {
-        setError(err.message);
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+    fetchRegistrations();
   }, []);
 
-  const handleProfilePhotoChange = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfilePhoto(reader.result);
-        setIsEditingPhoto(false);
-      };
-      reader.readAsDataURL(file);
+  const fetchRegistrations = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/api/admin/registrations');
+      setRegistrations(response.data);
+      setLoading(false);
+    } catch (err) {
+      setError(err.response?.data?.message || err.message);
+      setLoading(false);
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('user');
-    window.location.href = '/login';
+  const fetchContestParticipants = async () => {
+    if (!contestDetails.contestName) {
+      setError('Please enter contest name');
+      return;
+    }
+
+    setContestLoading(true);
+    setError('');
+    try {
+      const response = await axios.post(
+        'http://localhost:5000/api/admin/contest-participants',
+        contestDetails
+      );
+      const participants = response.data.participants;
+
+      const participantRegNumbers = new Set(participants.map((p) => p.regNumber));
+      const filteredNonParticipants = registrations
+        .filter((reg) => 
+          (contestDetails.department === 'all' || reg.department === contestDetails.department) &&
+          !participantRegNumbers.has(reg.regNumber)
+        )
+        .map((reg) => ({
+          regNumber: reg.regNumber,
+          email: reg.email,
+          department: reg.department,
+          codechef: reg.codechef || '-',
+        }));
+
+      setContestParticipants(participants);
+      setNonParticipants(filteredNonParticipants);
+      setStats(response.data.stats);
+    } catch (err) {
+      setError(err.response?.data?.message || err.message);
+    } finally {
+      setContestLoading(false);
+    }
   };
 
-  if (loading)
-    return (
-      <div className="loading-container">
-        <div className="loading-spinner"></div>
-        <p>Fetching your stats...</p>
-      </div>
-    );
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setContestDetails((prev) => ({ ...prev, [name]: value }));
+  };
 
-  if (error)
-    return (
-      <div className="error-container">
-        <h2>Error Loading Data</h2>
-        <p>{error}</p>
-        <button onClick={() => window.location.reload()}>Retry</button>
-      </div>
+  const handleDepartmentChange = (e) => {
+    setSelectedDepartment(e.target.value);
+  };
+
+  const exportToExcel = (data, fileName) => {
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+    XLSX.writeFile(workbook, `${fileName}.xlsx`);
+  };
+
+  const groupByDepartment = () => {
+    const grouped = {};
+    registrations.forEach((reg) => {
+      if (!grouped[reg.department]) {
+        grouped[reg.department] = [];
+      }
+      grouped[reg.department].push(reg);
+    });
+    return grouped;
+  };
+
+  const groupedRegistrations = groupByDepartment();
+  const filteredRegistrations =
+    selectedDepartment === 'all'
+      ? groupedRegistrations
+      : { [selectedDepartment]: groupedRegistrations[selectedDepartment] || [] };
+
+  const exportStudentsToExcel = () => {
+    const workbook = XLSX.utils.book_new();
+    Object.entries(filteredRegistrations).forEach(([dept, students]) => {
+      const data = students.map((student) => ({
+        'Reg Number': student.regNumber,
+        'Email': student.email,
+        'LeetCode': student.leetcode || '-',
+        'CodeChef': student.codechef || '-',
+        'HackerEarth': student.hackerearth || '-',
+        'HackerRank': student.hackerrank || '-',
+      }));
+      const worksheet = XLSX.utils.json_to_sheet(data);
+      XLSX.utils.book_append_sheet(workbook, worksheet, dept.slice(0, 31));
+    });
+    XLSX.writeFile(
+      workbook,
+      selectedDepartment === 'all'
+        ? 'department_wise_students.xlsx'
+        : `${selectedDepartment}_students.xlsx`
     );
+  };
+
+  const exportContestToExcel = () => {
+    const workbook = XLSX.utils.book_new();
+
+    const participantData = contestParticipants.map((p) => ({
+      'Reg Number': p.regNumber,
+      'Email': p.email,
+      'Department': p.department,
+      'Username': p.codechef || '-',
+      'Rating': p.rating || '-',
+      'Rank': p.rank || '-',
+    }));
+    const participantSheet = XLSX.utils.json_to_sheet(participantData);
+    XLSX.utils.book_append_sheet(workbook, participantSheet, 'Participated');
+
+    const nonParticipantData = nonParticipants.map((np) => ({
+      'Reg Number': np.regNumber,
+      'Email': np.email,
+      'Department': np.department,
+      'Username': np.codechef || '-',
+    }));
+    const nonParticipantSheet = XLSX.utils.json_to_sheet(nonParticipantData);
+    XLSX.utils.book_append_sheet(workbook, nonParticipantSheet, 'Not Participated');
+
+    XLSX.writeFile(workbook, `${contestDetails.contestName}_participation.xlsx`);
+  };
+
+  if (loading) return <div className="loading">Loading data...</div>;
+  if (error && activeTab === 'students') return <div className="error">Error: {error}</div>;
 
   return (
-    <div className="dashboard-container">
+    <div className="admin-dashboard">
       <div className="sidebar">
-        <div className="profile-section">
-          <div className="avatar">
-            <img
-              src={profilePhoto}
-              alt="Profile"
-              onClick={() => setIsEditingPhoto(true)}
-              style={{ cursor: 'pointer' }}
-            />
-            <span className="online-status"></span>
-          </div>
-          {isEditingPhoto && (
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleProfilePhotoChange}
-              ref={fileInputRef}
-              style={{ display: 'none' }}
-            />
-          )}
-          <h2>{codechefData?.name || 'User'}</h2>
-          <p className="username">@{codechefData?.username || userDetails?.regNumber}</p>
-          <button onClick={handleLogout} className="logout-btn">
-            Logout
-          </button>
+        <div className="sidebar-header">
+          <h2>Admin Panel</h2>
         </div>
-
-        <nav className="dashboard-nav">
-          <ul>
-            <li className={activeTab === 'codechef' ? 'active' : ''} onClick={() => setActiveTab('codechef')}>
-              <i className="fas fa-code"></i> CodeChef Performance
-            </li>
-            <li className={activeTab === 'leetcode' ? 'active' : ''} onClick={() => setActiveTab('leetcode')}>
-              <i className="fas fa-code-branch"></i> LeetCode Stats
-            </li>
-            <li className={activeTab === 'overall' ? 'active' : ''} onClick={() => setActiveTab('overall')}>
-              <i className="fas fa-chart-pie"></i> Overall Insights
-            </li>
-          </ul>
-        </nav>
-
-        <div className="sidebar-footer">
-          <p>Last updated: {new Date().toLocaleString()}</p>
-        </div>
+        <ul className="sidebar-menu">
+          <li
+            className={activeTab === 'students' ? 'active' : ''}
+            onClick={() => setActiveTab('students')}
+          >
+            <FaUsers /> Registered Students
+          </li>
+          <li
+            className={activeTab === 'participations' ? 'active' : ''}
+            onClick={() => setActiveTab('participations')}
+          >
+            <FaTrophy /> Contest Participations
+          </li>
+        </ul>
       </div>
 
       <div className="main-content">
-        <header className="dashboard-header">
-          <h1>CodeChef Performance</h1>
-          <div className="header-actions">
-            <button className="refresh-btn" onClick={() => window.location.reload()}>
-              <i className="fas fa-sync-alt"></i> Refresh
-            </button>
-          </div>
-        </header>
+        <h1>Admin Dashboard</h1>
 
-        {activeTab === 'codechef' && (
-          <div className="codechef-tab">
-            <div className="metrics-grid">
-              <div className="metric-card">
-                <div className="metric-icon">
-                  <i className="fas fa-star"></i>
-                </div>
-                <div className="metric-info">
-                  <h3>Current Rating</h3>
-                  <p className="metric-value">{codechefData?.rating || 'N/A'}</p>
-                  <p className="metric-change">Stars: {codechefData?.stars || 'N/A'}</p>
-                </div>
-              </div>
-              <div className="metric-card">
-                <div className="metric-icon">
-                  <i className="fas fa-trophy"></i>
-                </div>
-                <div className="metric-info">
-                  <h3>Highest Rating</h3>
-                  <p className="metric-value">{codechefData?.highestRating || 'N/A'}</p>
-                  <p className="metric-change">
-                    {codechefData?.rating - codechefData?.highestRating < 0 ? '↓' : '↑'}
-                    {Math.abs(codechefData?.rating - codechefData?.highestRating) || 0} from peak
-                  </p>
-                </div>
-              </div>
-              <div className="metric-card">
-                <div className="metric-icon">
-                  <i className="fas fa-globe"></i>
-                </div>
-                <div className="metric-info">
-                  <h3>Global Rank</h3>
-                  <p className="metric-value">#{codechefData?.globalRank || 'N/A'}</p>
-                  <p className="metric-change">
-                    Top {((codechefData?.globalRank / 100000) * 100).toFixed(2) || 'N/A'}%
-                  </p>
-                </div>
-              </div>
-              <div className="metric-card">
-                <div className="metric-icon">
-                  <i className="fas fa-flag"></i>
-                </div>
-                <div className="metric-info">
-                  <h3>Country Rank</h3>
-                  <p className="metric-value">#{codechefData?.countryRank || 'N/A'}</p>
-                  <p className="metric-change">{codechefData?.country || 'N/A'}</p>
+        {activeTab === 'students' && (
+          <div className="dashboard-section">
+            <div className="section-header">
+              <h2>Registered Students ({registrations.length})</h2>
+              <div className="filter-and-export">
+                <select
+                  value={selectedDepartment}
+                  onChange={handleDepartmentChange}
+                  className="department-select"
+                >
+                  <option value="all">All Departments</option>
+                  <option value="CSE">CSE</option>
+                  <option value="IT">IT</option>
+                  <option value="BT">BT</option>
+                  <option value="BM">BM</option>
+                  <option value="ACSE">ACSE</option>
+                  <option value="ECE">ECE</option>
+                  <option value="EEE">EEE</option>
+                  <option value="Agriculture">Agriculture</option>
+                  <option value="BBA">BBA</option>
+                </select>
+                <div className="export-buttons">
+                  <button onClick={exportStudentsToExcel}>
+                    <FaFileExcel /> Export to Excel
+                  </button>
                 </div>
               </div>
             </div>
-
-            <div className="contest-list-container">
-              <h3>Contests Participated</h3>
-              <div className="contest-list">
-                {contestList.length > 0 ? (
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Contest Name</th>
-                        <th>Rank</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {contestList.map((contest, index) => (
-                        <tr key={index}>
-                          <td>{contest.name}</td>
-                          <td>#{contest.rank}</td>
+            {Object.keys(filteredRegistrations).length > 0 ? (
+              Object.entries(filteredRegistrations).map(([dept, students]) => (
+                <div key={dept} className="department-section">
+                  <h3>{dept} ({students.length})</h3>
+                  <div className="table-container">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Reg Number</th>
+                          <th>Email</th>
+                          <th>LeetCode</th>
+                          <th>CodeChef</th>
+                          <th>HackerEarth</th>
+                          <th>HackerRank</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : (
-                  <p>No contest history available</p>
-                )}
-              </div>
+                      </thead>
+                      <tbody>
+                        {students.map((reg) => (
+                          <tr key={reg._id}>
+                            <td>{reg.regNumber}</td>
+                            <td>{reg.email}</td>
+                            <td>{reg.leetcode || '-'}</td>
+                            <td>{reg.codechef || '-'}</td>
+                            <td>{reg.hackerearth || '-'}</td>
+                            <td>{reg.hackerrank || '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p>No registered students found for the selected department.</p>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'participations' && (
+          <div className="dashboard-section">
+            <h2>CodeChef Contest Participation</h2>
+            <div className="filter-controls">
+              <select
+                name="platform"
+                value={contestDetails.platform}
+                onChange={handleInputChange}
+              >
+                <option value="codechef">CodeChef</option>
+              </select>
+
+              <input
+                type="text"
+                name="contestName"
+                placeholder="Contest name"
+                value={contestDetails.contestName}
+                onChange={handleInputChange}
+              />
+
+              <select
+                name="department"
+                value={contestDetails.department}
+                onChange={handleInputChange}
+              >
+                <option value="all">All Departments</option>
+                <option value="CSE">CSE</option>
+                <option value="IT">IT</option>
+                <option value="BT">BT</option>
+                <option value="BM">BM</option>
+                <option value="ACSE">ACSE</option>
+                <option value="ECE">ECE</option>
+                <option value="EEE">EEE</option>
+                <option value="Agriculture">Agriculture</option>
+                <option value="BBA">BBA</option>
+              </select>
+
+              <button onClick={fetchContestParticipants} disabled={contestLoading}>
+                {contestLoading ? 'Fetching...' : 'Get Participants'}
+              </button>
             </div>
-            <div className="rating-history-container">
-              <h3>Rating History</h3>
-              <div className="rating-history">
-                {ratingHistory.length > 0 ? (
+
+            {error && <p className="error">{error}</p>}
+
+            {(contestParticipants.length > 0 || nonParticipants.length > 0) && (
+              <div className="results-section">
+                <div className="stats">
+                  <h3>Statistics</h3>
+                  <p>Total Participants: {stats.totalParticipants}</p>
+                  <p>Total Non-Participants: {nonParticipants.length}</p>
+                  <p>
+                    Average Rating:{' '}
+                    {stats.averageRating !== 'N/A'
+                      ? stats.averageRating
+                      : 'Not available'}
+                  </p>
+                  <p>
+                    Department Breakdown (Participants):{' '}
+                    {Object.keys(stats.departmentBreakdown).length > 0
+                      ? Object.entries(stats.departmentBreakdown)
+                          .map(([dept, count]) => `${dept}: ${count}`)
+                          .join(', ')
+                      : 'None'}
+                  </p>
+                </div>
+
+                <div className="export-buttons">
+                  <button onClick={exportContestToExcel}>
+                    <FaFileExcel /> Export to Excel
+                  </button>
+                </div>
+
+                <h3>Participated ({contestParticipants.length})</h3>
+                <div className="table-container">
                   <table>
                     <thead>
                       <tr>
-                        <th>Contest Code</th>
-                        <th>Date</th>
+                        <th>Reg Number</th>
+                        <th>Email</th>
+                        <th>Department</th>
+                        <th>Username</th>
                         <th>Rating</th>
                         <th>Rank</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {ratingHistory.map((rating, index) => (
-                        <tr key={index}>
-                          <td>{rating.code}</td>
-                          <td>{`${rating.getyear}-${rating.getmonth}-${rating.getday}`}</td>
-                          <td>{rating.rating}</td>
-                          <td>#{rating.rank}</td>
+                      {contestParticipants.map((p, i) => (
+                        <tr key={i}>
+                          <td>{p.regNumber}</td>
+                          <td>{p.email}</td>
+                          <td>{p.department}</td>
+                          <td>{p.codechef || '-'}</td>
+                          <td>{p.rating || '-'}</td>
+                          <td>{p.rank || '-'}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
-                ) : (
-                  <p>No rating history available</p>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+                </div>
 
-        {activeTab === 'leetcode' && (
-          <div className="overview-tab">
-            <h2>LeetCode Stats</h2>
-            <div className="metrics-grid">
-              <div className="metric-card">
-                <div className="metric-icon">
-                  <i className="fas fa-check-circle"></i>
-                </div>
-                <div className="metric-info">
-                  <h3>Total Solved</h3>
-                  <p className="metric-value">{leetcodeData?.totalSolved || 'N/A'}</p>
-                </div>
-              </div>
-              <div className="metric-card">
-                <div className="metric-icon">
-                  <i className="fas fa-chart-line"></i>
-                </div>
-                <div className="metric-info">
-                  <h3>Ranking</h3>
-                  <p className="metric-value">{leetcodeData?.ranking || 'N/A'}</p>
-                </div>
-              </div>
-              <div className="metric-card">
-                <div className="metric-icon">
-                  <i className="fas fa-puzzle-piece"></i>
-                </div>
-                <div className="metric-info">
-                  <h3>Acceptance Rate</h3>
-                  <p className="metric-value">{leetcodeData?.acceptanceRate || 'N/A'}</p>
+                <h3>Not Participated ({nonParticipants.length})</h3>
+                <div className="table-container">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Reg Number</th>
+                        <th>Email</th>
+                        <th>Department</th>
+                        <th>Username</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {nonParticipants.map((np, i) => (
+                        <tr key={i}>
+                          <td>{np.regNumber}</td>
+                          <td>{np.email}</td>
+                          <td>{np.department}</td>
+                          <td>{np.codechef || '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
-            </div>
-          </div>
-        )}
+            )}
 
-        {activeTab === 'overall' && (
-          <div className="overview-tab">
-            <h2>Overall Performance</h2>
-            <div className="metrics-grid">
-              <div className="metric-card">
-                <div className="metric-icon">
-                  <i className="fas fa-code"></i>
-                </div>
-                <div className="metric-info">
-                  <h3>CodeChef Rating</h3>
-                  <p className="metric-value">
-                    {codechefData?.rating || 'N/A'} <span>({codechefData?.stars || 'N/A'})</span>
-                  </p>
-                </div>
-              </div>
-              <div className="metric-card">
-                <div className="metric-icon">
-                  <i className="fas fa-code-branch"></i>
-                </div>
-                <div className="metric-info">
-                  <h3>LeetCode Solved</h3>
-                  <p className="metric-value">{leetcodeData?.totalSolved || 'N/A'}</p>
-                </div>
-              </div>
-              <div className="metric-card">
-                <div className="metric-icon">
-                  <i className="fas fa-medal"></i>
-                </div>
-                <div className="metric-info">
-                  <h3>CodeChef Global Rank</h3>
-                  <p className="metric-value">#{codechefData?.globalRank || 'N/A'}</p>
-                </div>
-              </div>
-              <div className="metric-card">
-                <div className="metric-icon">
-                  <i className="fas fa-chart-line"></i>
-                </div>
-                <div className="metric-info">
-                  <h3>LeetCode Ranking</h3>
-                  <p className="metric-value">{leetcodeData?.ranking || 'N/A'}</p>
-                </div>
-              </div>
-            </div>
+            {contestParticipants.length === 0 && nonParticipants.length === 0 && !contestLoading && !error && (
+              <p>No data available for the specified contest and filters.</p>
+            )}
           </div>
         )}
       </div>
@@ -348,4 +384,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default AdminDashboard;
